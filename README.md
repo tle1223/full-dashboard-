@@ -1,1 +1,4 @@
-# full-dashboard-
+streamlit
+pandas
+plotly
+openpyxl
