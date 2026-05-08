@@ -9,12 +9,12 @@ st.title("📊 Dashboard")
 # Company selector
 # =============================
 if "company" not in st.session_state:
-    st.session_state["company"] = "บริษัท PAN"
+    st.session_state["company"] = "บริษัท Shine"
 
 company = st.selectbox(
     "เลือกบริษัท",
-    ["บริษัท PAN", "บริษัท MIKI"],
-    index=["บริษัท PAN", "บริษัท MIKI"].index(st.session_state["company"])
+    ["บริษัท Shine", "บริษัท MIKI"],
+    index=["บริษัท Shine", "บริษัท MIKI"].index(st.session_state["company"])
 )
 st.session_state["company"] = company
 
