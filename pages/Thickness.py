@@ -14,7 +14,7 @@ if "company" not in st.session_state:
 company = st.selectbox(
     "เลือกบริษัท",
     ["บริษัท PAN", "บริษัท MIKI"],
-    index=["บริษัท PAn", "บริษัท MIKI"].index(st.session_state["company"])
+    index=["บริษัท PAN", "บริษัท MIKI"].index(st.session_state["company"])
 )
 st.session_state["company"] = company
 
