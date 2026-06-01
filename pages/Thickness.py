@@ -23,12 +23,7 @@ st.session_state["company"] = company
 # =============================
 file = st.file_uploader("Upload Excel", type=["xlsx"])
 
-def make_month_cols(df, date_col):
-    """แปลงคอลัมน์วันที่เป็น Month (เต็ม) และ MonthNum สำหรับเรียงลำดับ"""
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df["Month"] = df[date_col].dt.strftime("%B")   # March, April, ...
-    df["MonthNum"] = df[date_col].dt.month
-    return df
+
 
 if file:
     # อ่าน sheet (ถ้าไม่มี sheet จะเป็น DataFrame ว่าง)
@@ -54,117 +49,262 @@ if file:
         df2.columns = df2.columns.str.strip()
     if not df_miki.empty:
         df_miki.columns = df_miki.columns.str.strip()
-
     # =============================
-    # Shine (แสดง KPI ค่าเฉลี่ยของ thickness และ ค่าMin + กราฟ)
+    # Shine
     # =============================
     if company == "บริษัท Shine":
+
         if df1.empty or df2.empty:
-            st.warning("ไฟล์ Shine ไม่สมบูรณ์ กรุณาตรวจสอบ sheet 'shine 1 MC' และ 'shine 2 MC'")
+            st.warning(
+                "ไฟล์ Shine ไม่สมบูรณ์ กรุณาตรวจสอบ sheet 'shine 1 MC' และ 'shine 2 MC'"
+            )
+
         else:
-            # หา column thickness อัตโนมัติ
-            try:
-                col1_thick = [c for c in df1.columns if "thickness" in c.lower() or "au thickness" in c.lower()][0]
-            except IndexError:
-                col1_thick = None
-            try:
-                col2_thick = [c for c in df2.columns if "thickness" in c.lower() or "au thickness" in c.lower()][0]
-            except IndexError:
-                col2_thick = None
 
-            # หา Date column อัตโนมัติ แล้วสร้าง Month + MonthNum (ใช้ชื่อคอลัมน์ที่เจอ)
-            try:
-                date_col1 = [c for c in df1.columns if "date" in c.lower() or "วัน" in c][0]
-                df1 = make_month_cols(df1, date_col1)
-            except Exception:
-                df1["Month"] = pd.NA
-                df1["MonthNum"] = pd.NA
+            month_order = {
+                "January": 1,
+                "February": 2,
+                "March": 3,
+                "April": 4,
+                "May": 5,
+                "June": 6,
+                "July": 7,
+                "August": 8,
+                "September": 9,
+                "October": 10,
+                "November": 11,
+                "December": 12
+            }
 
-            try:
-                date_col2 = [c for c in df2.columns if "date" in c.lower() or "วัน" in c][0]
-                df2 = make_month_cols(df2, date_col2)
-            except Exception:
-                df2["Month"] = pd.NA
-                df2["MonthNum"] = pd.NA
+            # ====================================
+            # SHINE 1
+            # ====================================
 
-            # -----------------------------
-            # KPI ของ Shine (แสดง Avg ของ thickness และ Avg ของ ค่าMin)
-            # -----------------------------
-            colA, colB = st.columns(2)
-            with colA:
-                if col1_thick and col1_thick in df1.columns:
-                    avg_thick1 = df1[col1_thick].mean()
-                    max_thick1 = df1[col1_thick].max()
-                    min_thick1 = df1[col1_thick].min()
-                else:
-                    avg_thick1 = max_thick1 = min_thick1 = None
+            st.subheader("📊 Shine 1 MC")
 
-                if "ค่าMin" in df1.columns:
-                    avg_min1 = df1["ค่าMin"].mean()
-                else:
-                    avg_min1 = None
+            if "Month" not in df1.columns:
+                if "Column2" in df1.columns:
+                    df1["Month"] = df1["Column2"]
 
-                # แสดงกล่อง KPI
-                st.markdown(f"""
-                <div style='border:2px solid #4CAF50; padding:10px; border-radius:8px; text-align:center;'>
-                    <div style='font-weight:600; margin-bottom:6px;'>Shine1 MC</div>
-                    <div>Thickness Avg: <b>{round(avg_thick1,2) if avg_thick1 is not None else '-'}</b></div>
-                    <div>Thickness Max: <b>{round(max_thick1,2) if max_thick1 is not None else '-'}</b></div>
-                    <div>Thickness Min: <b>{round(min_thick1,2) if min_thick1 is not None else '-'}</b></div>
-                    <div style='margin-top:6px;'>ค่าMin Avg: <b>{round(avg_min1,2) if avg_min1 is not None else '-'}</b></div>
-                </div>
-                """, unsafe_allow_html=True)
+            col1_thick = "Au Thickness"
 
-            with colB:
-                if col2_thick and col2_thick in df2.columns:
-                    avg_thick2 = df2[col2_thick].mean()
-                    max_thick2 = df2[col2_thick].max()
-                    min_thick2 = df2[col2_thick].min()
-                else:
-                    avg_thick2 = max_thick2 = min_thick2 = None
+            if (
+                "Month" in df1.columns
+                and col1_thick in df1.columns
+                and "ค่าMin" in df1.columns
+            ):
 
-                if "ค่าMin" in df2.columns:
-                    avg_min2 = df2["ค่าMin"].mean()
-                else:
-                    avg_min2 = None
+                df1["Month"] = df1["Month"].astype(str).str.strip()
 
-                st.markdown(f"""
-                <div style='border:2px solid #2196F3; padding:10px; border-radius:8px; text-align:center;'>
-                    <div style='font-weight:600; margin-bottom:6px;'>Shine2 MC</div>
-                    <div>Thickness Avg: <b>{round(avg_thick2,2) if avg_thick2 is not None else '-'}</b></div>
-                    <div>Thickness Max: <b>{round(max_thick2,2) if max_thick2 is not None else '-'}</b></div>
-                    <div>Thickness Min: <b>{round(min_thick2,2) if min_thick2 is not None else '-'}</b></div>
-                    <div style='margin-top:6px;'>ค่าMin Avg: <b>{round(avg_min2,2) if avg_min2 is not None else '-'}</b></div>
-                </div>
-                """, unsafe_allow_html=True)
+                df1[col1_thick] = pd.to_numeric(
+                    df1[col1_thick],
+                    errors="coerce"
+                )
 
-            # -------- Shine1 graph (เต็มความกว้าง) --------
-            if "MonthNum" in df1.columns and col1_thick and "ค่าMin" in df1.columns:
-                df1_m = df1.groupby(["MonthNum", "Month"], as_index=False).agg({col1_thick: "mean", "ค่าMin": "mean"})
-                df1_m = df1_m.sort_values("MonthNum")
+                df1["ค่าMin"] = pd.to_numeric(
+                    df1["ค่าMin"],
+                    errors="coerce"
+                )
+
+                c1, c2, c3, c4 = st.columns(4)
+
+                c1.metric(
+                    "Avg Thickness",
+                    round(df1[col1_thick].mean(), 3)
+                )
+
+                c2.metric(
+                    "Max Thickness",
+                    round(df1[col1_thick].max(), 3)
+                )
+
+                c3.metric(
+                    "Min Thickness",
+                    round(df1[col1_thick].min(), 3)
+                )
+
+                c4.metric(
+                    "Avg ค่าMin",
+                    round(df1["ค่าMin"].mean(), 3)
+                )
+
+                df1_month = (
+                    df1.groupby("Month", as_index=False)
+                    .agg({
+                        col1_thick: "mean",
+                        "ค่าMin": "mean"
+                    })
+                )
+
+                df1_month["MonthNum"] = (
+                    df1_month["Month"]
+                    .map(month_order)
+                )
+
+                df1_month = (
+                    df1_month
+                    .sort_values("MonthNum")
+                )
+
                 fig1 = go.Figure()
-                fig1.add_trace(go.Scatter(x=df1_m["Month"], y=df1_m[col1_thick], mode="lines+markers", name=col1_thick))
-                fig1.add_trace(go.Scatter(x=df1_m["Month"], y=df1_m["ค่าMin"], mode="lines+markers", name="ค่าMin"))
-                fig1.add_hline(y=1, line=dict(color="red", dash="dash"))
-                fig1.add_hline(y=1.4, line=dict(color="red", dash="dash"))
-                fig1.update_layout(title="Shine1 MC (รายเดือน)", template="plotly_white")
-                st.plotly_chart(fig1, use_container_width=True)
-            else:
-                st.info("ไม่มีข้อมูลเพียงพอสำหรับกราฟ Shine1 (ต้องมี Month และ ค่าMin และ thickness)")
 
-            # -------- Shine2 graph (เต็มความกว้าง) --------
-            if "MonthNum" in df2.columns and col2_thick and "ค่าMin" in df2.columns:
-                df2_m = df2.groupby(["MonthNum", "Month"], as_index=False).agg({col2_thick: "mean", "ค่าMin": "mean"})
-                df2_m = df2_m.sort_values("MonthNum")
-                fig2 = go.Figure()
-                fig2.add_trace(go.Scatter(x=df2_m["Month"], y=df2_m[col2_thick], mode="lines+markers", name=col2_thick))
-                fig2.add_trace(go.Scatter(x=df2_m["Month"], y=df2_m["ค่าMin"], mode="lines+markers", name="ค่าMin"))
-                fig2.add_hline(y=2, line=dict(color="red", dash="dash"))
-                fig2.add_hline(y=2.6, line=dict(color="red", dash="dash"))
-                fig2.update_layout(title="Shine2 MC (รายเดือน)", template="plotly_white")
-                st.plotly_chart(fig2, use_container_width=True)
+                fig1.add_trace(
+                    go.Scatter(
+                        x=df1_month["Month"],
+                        y=df1_month[col1_thick],
+                        mode="lines+markers",
+                        name="Au Thickness"
+                    )
+                )
+
+                fig1.add_trace(
+                    go.Scatter(
+                        x=df1_month["Month"],
+                        y=df1_month["ค่าMin"],
+                        mode="lines+markers",
+                        name="ค่าMin"
+                    )
+                )
+
+                fig1.add_hline(
+                    y=1,
+                    line=dict(color="red", dash="dash")
+                )
+
+                fig1.add_hline(
+                    y=1.4,
+                    line=dict(color="red", dash="dash")
+                )
+
+                fig1.update_layout(
+                    title="Shine1 MC (Monthly Average)",
+                    template="plotly_white"
+                )
+
+                st.plotly_chart(
+                    fig1,
+                    use_container_width=True
+                )
+
             else:
-                st.info("ไม่มีข้อมูลเพียงพอสำหรับกราฟ Shine2 (ต้องมี Month และ ค่าMin และ thickness)")
+                st.warning(
+                    "ไม่พบคอลัมน์ Month / Au Thickness / ค่าMin ใน Shine1"
+                )
+
+            # ====================================
+            # SHINE 2
+            # ====================================
+
+            st.subheader("📊 Shine 2 MC")
+
+            if "Month" not in df2.columns:
+                if "Column2" in df2.columns:
+                    df2["Month"] = df2["Column2"]
+
+            col2_thick = "Au thickness"
+
+            if (
+                "Month" in df2.columns
+                and col2_thick in df2.columns
+                and "ค่าMin" in df2.columns
+            ):
+
+                df2["Month"] = df2["Month"].astype(str).str.strip()
+
+                df2[col2_thick] = pd.to_numeric(
+                    df2[col2_thick],
+                    errors="coerce"
+                )
+
+                df2["ค่าMin"] = pd.to_numeric(
+                    df2["ค่าMin"],
+                    errors="coerce"
+                )
+
+                c1, c2, c3, c4 = st.columns(4)
+
+                c1.metric(
+                    "Avg Thickness",
+                    round(df2[col2_thick].mean(), 3)
+                )
+
+                c2.metric(
+                    "Max Thickness",
+                    round(df2[col2_thick].max(), 3)
+                )
+
+                c3.metric(
+                    "Min Thickness",
+                    round(df2[col2_thick].min(), 3)
+                )
+
+                c4.metric(
+                    "Avg ค่าMin",
+                    round(df2["ค่าMin"].mean(), 3)
+                )
+
+                df2_month = (
+                    df2.groupby("Month", as_index=False)
+                    .agg({
+                        col2_thick: "mean",
+                        "ค่าMin": "mean"
+                    })
+                )
+
+                df2_month["MonthNum"] = (
+                    df2_month["Month"]
+                    .map(month_order)
+                )
+
+                df2_month = (
+                    df2_month
+                    .sort_values("MonthNum")
+                )
+
+                fig2 = go.Figure()
+
+                fig2.add_trace(
+                    go.Scatter(
+                        x=df2_month["Month"],
+                        y=df2_month[col2_thick],
+                        mode="lines+markers",
+                        name="Au Thickness"
+                    )
+                )
+
+                fig2.add_trace(
+                    go.Scatter(
+                        x=df2_month["Month"],
+                        y=df2_month["ค่าMin"],
+                        mode="lines+markers",
+                        name="ค่าMin"
+                    )
+                )
+
+                fig2.add_hline(
+                    y=2,
+                    line=dict(color="red", dash="dash")
+                )
+
+                fig2.add_hline(
+                    y=2.6,
+                    line=dict(color="red", dash="dash")
+                )
+
+                fig2.update_layout(
+                    title="Shine2 MC (Monthly Average)",
+                    template="plotly_white"
+                )
+
+                st.plotly_chart(
+                    fig2,
+                    use_container_width=True
+                )
+
+            else:
+                st.warning(
+                    "ไม่พบคอลัมน์ Month / Au thickness / ค่าMin ใน Shine2"
+                )
 
     # =============================
     # MIKI (ใช้คอลัมน์ Month โดยตรง)
